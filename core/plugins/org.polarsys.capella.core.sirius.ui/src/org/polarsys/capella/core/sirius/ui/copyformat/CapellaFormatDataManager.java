@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2020 THALES GLOBAL SERVICES.
+ * Copyright (c) 2006, 2023 THALES GLOBAL SERVICES.
  * 
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -42,6 +42,8 @@ import org.eclipse.sirius.diagram.ui.tools.api.format.FormatDataKey;
 import org.eclipse.sirius.diagram.ui.tools.api.format.SiriusFormatDataManager;
 import org.eclipse.sirius.viewpoint.DSemanticDecorator;
 import org.eclipse.sirius.viewpoint.description.RepresentationElementMapping;
+import org.polarsys.capella.core.data.cs.PhysicalPathInvolvement;
+import org.polarsys.capella.core.data.fa.FunctionalChainInvolvementFunction;
 import org.polarsys.capella.core.data.oa.Entity;
 import org.polarsys.capella.core.sirius.ui.copyformat.keyproviders.IKeyProvider;
 
@@ -202,6 +204,20 @@ public class CapellaFormatDataManager extends AbstractSiriusFormatDataManager im
       return result;
     }
 
+    if (result instanceof FunctionalChainInvolvementFunction) {
+      FunctionalChainInvolvementFunction fcif = (FunctionalChainInvolvementFunction) result;
+      if (fcif.getInvolved() != null) {
+        result = fcif.getInvolved();
+      }
+    }
+
+    if (result instanceof PhysicalPathInvolvement) {
+      PhysicalPathInvolvement ppi = (PhysicalPathInvolvement) result;
+      if (ppi.getInvolved() != null) {
+        result = ppi.getInvolved();
+      }
+    }
+
     if (result instanceof Entity) {
       Entity entity = (Entity) result;
       if (!entity.getRepresentingParts().isEmpty()) {
@@ -272,7 +288,7 @@ public class CapellaFormatDataManager extends AbstractSiriusFormatDataManager im
       //TODO we should also check combination of all keyProviders..
     }
 
-    if (key instanceof CapellaDecoratorFormatDataKey) {
+    if (formatData == null && key instanceof CapellaDecoratorFormatDataKey) {
       AbstractCapellaFormatDataKey parentKey = ((CapellaDecoratorFormatDataKey) key).getParent();
       if (parentKey != null) {
         formatData = getLinkedFormatData(parentKey, mapping);
@@ -285,6 +301,8 @@ public class CapellaFormatDataManager extends AbstractSiriusFormatDataManager im
   protected AbstractFormatData findLinkedFormatData(FormatDataKey key, RepresentationElementMapping mapping) {
     if (!formatDataMap.containsKey(key))
       return null;
+
+
     Map<String, AbstractFormatData> mappingFormatDataMap = formatDataMap.get(key);
     if (mappingFormatDataMap.containsKey(mapping.getName()))
       return decorateFormatData(key, mappingFormatDataMap.get(mapping.getName()));
