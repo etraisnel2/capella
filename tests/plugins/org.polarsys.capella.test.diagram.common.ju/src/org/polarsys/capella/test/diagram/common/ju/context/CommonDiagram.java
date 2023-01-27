@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2016, 2020 THALES GLOBAL SERVICES.
+ * Copyright (c) 2016, 2023 THALES GLOBAL SERVICES.
  * 
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -12,17 +12,39 @@
  *******************************************************************************/
 package org.polarsys.capella.test.diagram.common.ju.context;
 
+import static org.junit.Assert.fail;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.eclipse.core.commands.ExecutionEvent;
+import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.core.expressions.EvaluationContext;
+import org.eclipse.core.expressions.IEvaluationContext;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.gef.EditPart;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.sirius.diagram.DDiagram;
 import org.eclipse.sirius.diagram.DDiagramElement;
 import org.eclipse.sirius.diagram.DDiagramElementContainer;
 import org.eclipse.sirius.diagram.DEdge;
 import org.eclipse.sirius.diagram.DNode;
 import org.eclipse.sirius.diagram.DNodeListElement;
+import org.eclipse.sirius.viewpoint.DSemanticDecorator;
 import org.eclipse.sirius.viewpoint.description.DAnnotation;
+import org.eclipse.ui.ISources;
 import org.polarsys.capella.core.data.capellacore.CapellaElement;
+import org.polarsys.capella.core.sirius.analysis.DiagramServices;
 import org.polarsys.capella.core.sirius.analysis.constants.IDNDToolNameConstants;
 import org.polarsys.capella.core.sirius.analysis.constants.IToolNameConstants;
+import org.polarsys.capella.core.sirius.ui.handlers.AbstractSelectInEditorCommandHandler;
+import org.polarsys.capella.core.sirius.ui.handlers.SelectElementsOfSameTypeCommandHandler;
+import org.polarsys.capella.core.sirius.ui.handlers.SelectOwnedElementsCommandHandler;
+import org.polarsys.capella.core.sirius.ui.handlers.SelectOwnedPortsCommandHandler;
+import org.polarsys.capella.core.sirius.ui.handlers.SelectRelatedConnectionsCommandHandler;
+import org.polarsys.capella.core.sirius.ui.handlers.SelectResemblingElementsCommandHandler;
 import org.polarsys.capella.test.diagram.common.ju.step.tools.CreateAbstractDNodeTool;
 import org.polarsys.capella.test.diagram.common.ju.step.tools.CreateContainerTool;
 import org.polarsys.capella.test.diagram.common.ju.step.tools.CreateDEdgeTool;
@@ -30,7 +52,6 @@ import org.polarsys.capella.test.diagram.common.ju.step.tools.DeleteElementTool;
 import org.polarsys.capella.test.diagram.common.ju.step.tools.DragAndDropFromProjectExplorerTool;
 import org.polarsys.capella.test.diagram.common.ju.step.tools.DragAndDropTool;
 import org.polarsys.capella.test.diagram.common.ju.step.tools.InsertRemoveTool;
-import org.polarsys.capella.test.diagram.common.ju.step.tools.SelectTool;
 import org.polarsys.capella.test.diagram.common.ju.step.tools.titleblocks.CreateDiagramTitleBlockTool;
 import org.polarsys.capella.test.diagram.common.ju.step.tools.titleblocks.CreateElementTitleBlockTool;
 import org.polarsys.capella.test.diagram.common.ju.step.tools.titleblocks.InsertColumnInTitleBlockTool;
@@ -166,24 +187,95 @@ public class CommonDiagram extends DiagramContext {
     new InsertRemoveTool(this, IToolNameConstants.TOOL_INSERT_REMOVE_PVG, containerId).remove(id);
   }
 
-  public void selectSameType(String id) {
-    new SelectTool(this, IToolNameConstants.TOOL_COMMON_SELECT_SAME_TYPE).ensurePrecondition(true).select(id);
+  public void selectSameType(String initialElement) {
+    DSemanticDecorator decorator = getView(initialElement);
+    EditPart correspondingEditPart = DiagramServices.getDiagramServices().getEditPart((DDiagramElement) decorator);
+    ExecutionEvent event = createExecutionEvent(correspondingEditPart);
+
+    SelectElementsOfSameTypeCommandHandler handler = new SelectElementsOfSameTypeCommandHandler() {
+      @Override
+      protected IStructuredSelection getSelection() {
+        StructuredSelection selection = new StructuredSelection(correspondingEditPart);
+        return selection;
+      }
+    };
+    assertSelectionWorked(event, handler);
   }
 
-  public void selectSameMapping(String id) {
-    new SelectTool(this, IToolNameConstants.TOOL_COMMON_SELECT_SAME_MAPPING).ensurePrecondition(true).select(id);
+  public void selectSameMapping(String initialElement) {
+    DSemanticDecorator decorator = getView(initialElement);
+    EditPart correspondingEditPart = DiagramServices.getDiagramServices().getEditPart((DDiagramElement) decorator);
+
+    ExecutionEvent event = createExecutionEvent(correspondingEditPart);
+
+    SelectResemblingElementsCommandHandler handler = new SelectResemblingElementsCommandHandler() {
+      @Override
+      protected IStructuredSelection getSelection() {
+        StructuredSelection selection = new StructuredSelection(correspondingEditPart);
+        return selection;
+      }
+    };
+    assertSelectionWorked(event, handler);
   }
 
-  public void selectOwnedPorts(String id) {
-    new SelectTool(this, IToolNameConstants.TOOL_COMMON_SELECT_OWNED_PORTS).ensurePrecondition(true).select(id);
+  public void selectOwnedPorts(String initialElement) {
+    DSemanticDecorator decorator = getView(initialElement);
+    EditPart correspondingEditPart = DiagramServices.getDiagramServices().getEditPart((DDiagramElement) decorator);
+
+    ExecutionEvent event = createExecutionEvent(correspondingEditPart);
+
+    SelectOwnedPortsCommandHandler handler = new SelectOwnedPortsCommandHandler() {
+      @Override
+      protected IStructuredSelection getSelection() {
+        StructuredSelection selection = new StructuredSelection(correspondingEditPart);
+        return selection;
+      }
+    };
+    assertSelectionWorked(event, handler);
   }
 
-  public void selectOwnedElements(String id) {
-    new SelectTool(this, IToolNameConstants.TOOL_COMMON_SELECT_OWNED_ELEMENTS).ensurePrecondition(true).select(id);
+  public void selectOwnedElements(String initialElement) {
+    DSemanticDecorator decorator = getView(initialElement);
+    EditPart correspondingEditPart = DiagramServices.getDiagramServices().getEditPart((DDiagramElement) decorator);
+
+    ExecutionEvent event = createExecutionEvent(correspondingEditPart);
+
+    SelectOwnedElementsCommandHandler handler = new SelectOwnedElementsCommandHandler() {
+      @Override
+      protected IStructuredSelection getSelection() {
+        StructuredSelection selection = new StructuredSelection(correspondingEditPart);
+        return selection;
+      }
+    };
+    assertSelectionWorked(event, handler);
   }
 
-  public void selectRelatedEdges(String id) {
-    new SelectTool(this, IToolNameConstants.TOOL_COMMON_SELECT_RELATED_EDGES).ensurePrecondition(true).select(id);
+  public void selectRelatedEdges(String initialElement) {
+    DSemanticDecorator decorator = getView(initialElement);
+    EditPart correspondingEditPart = DiagramServices.getDiagramServices().getEditPart((DDiagramElement) decorator);
+
+    ExecutionEvent event = createExecutionEvent(correspondingEditPart);
+
+    SelectRelatedConnectionsCommandHandler handler = new SelectRelatedConnectionsCommandHandler() {
+      @Override
+      protected IStructuredSelection getSelection() {
+        StructuredSelection selection = new StructuredSelection(correspondingEditPart);
+        return selection;
+      }
+    };
+    assertSelectionWorked(event, handler);
+  }
+
+  private void assertSelectionWorked(ExecutionEvent event, AbstractSelectInEditorCommandHandler handler) {
+    Object result = null;
+    try {
+      result = handler.execute(event);
+    } catch (ExecutionException e) {
+      fail("Could not execute handler " + handler.getClass().getSimpleName());
+    }
+    if (result == null) {
+      fail("Result shouldn't be null");
+    }
   }
 
   public void dragAndDropConstraintFromExplorer(String idDraggedElement, String containerId) {
@@ -292,6 +384,16 @@ public class CommonDiagram extends DiagramContext {
     EObject semanticElement = view.getTarget();
 
     return ((CapellaElement) semanticElement).getId();
+  }
+  
+  protected ExecutionEvent createExecutionEvent(Object... elements) {
+    IEvaluationContext context = new EvaluationContext(null, new Object());
+    Map<String, String> parameters = new HashMap<>();
+    ExecutionEvent event = new ExecutionEvent(null, parameters, null, context);
+
+    context.addVariable(ISources.ACTIVE_CURRENT_SELECTION_NAME, new StructuredSelection(Arrays.asList(elements)));
+
+    return event;
   }
 
 }
