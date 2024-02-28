@@ -22,6 +22,8 @@ import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.jface.layout.GridLayoutFactory;
+import org.eclipse.sirius.business.api.session.Session;
+import org.eclipse.sirius.business.api.session.SessionManager;
 import org.eclipse.sirius.common.tools.api.query.IllegalStateExceptionQuery;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
@@ -212,6 +214,12 @@ public abstract class ElementDescriptionGroup {
     if (updateDescriptionEditability(semanticElement, semanticFeature)) {
       try {
         if (semanticElement != null && semanticFeature != null) {
+          Session session = SessionManager.INSTANCE.getSession(semanticElement);
+          if(session == null) {
+            semanticElement = null;
+            semanticFeature = null;
+            return ;
+          }
           ((SavingStrategy) descriptionTextField.getSaveStrategy()).ensureLastSave();
           descriptionTextField.bind(semanticElement, semanticFeature);
           descriptionTextField.setSaveStrategy(new SavingStrategy(semanticElement, semanticFeature));
