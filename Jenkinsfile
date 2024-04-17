@@ -90,15 +90,11 @@ pipeline {
 					def antlrFeatureName = 'org.antlr.runtime/3.2.0.v201101311130'
 					eclipse.installFeature('${CAPELLA_PRODUCT_PATH}', antlrRepoPath, antlrFeatureName)
 					sh "cd ${WORKSPACE}/releng/plugins/org.polarsys.capella.rcp.product/target/products/org.polarsys.capella.rcp.product/linux/gtk/x86_64/"
-					sh "ls"
 					sh "cd .."
-					sh "ls"
 					sh "mkdir capella"
-					sh "ls"
 					sh "mv ${WORKSPACE}/releng/plugins/org.polarsys.capella.rcp.product/target/products/org.polarsys.capella.rcp.product/linux/gtk/x86_64/* capella"
-					sh "ls"
 					sh "zip -r ${WORKSPACE}/releng/plugins/org.polarsys.capella.rcp.product/target/products/capella-linux-gtk-x86_64.zip capella/"
-				
+					sh "mv capella/* ${WORKSPACE}/releng/plugins/org.polarsys.capella.rcp.product/target/products/org.polarsys.capella.rcp.product/linux/gtk/x86_64"
 				}
 			}
 		}
@@ -109,9 +105,10 @@ pipeline {
         		script {
 					withEnv(['MAVEN_OPTS=-Xmx3500m']) {
 						wrap([$class: 'Xvnc', takeScreenshot: false, useXauthority: true]) {
-							tester.runRcptt("-P rcptt -Dmaven.test.failure.ignore=true -fae")					
+							tester.runRcptt("-P rcptt -Dmaven.test.failure.ignore=true -fn")			
+							tester.publishTests()							
 						}
-						tester.publishTests()
+						
 					}
 				}
 			}
